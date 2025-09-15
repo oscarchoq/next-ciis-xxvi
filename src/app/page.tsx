@@ -1,9 +1,13 @@
-import Image from "next/image";
+import { Formulario } from './formulario';
+import { GetPlanesExample } from './getPlanesExample';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center mx-auto">
+    <div className="flex flex-col gap-8 min-h-screen items-center justify-center mx-auto">
       CIIS XXVI
+
+      <GetPlanesExample />
+      <Formulario />
     </div>
   );
 }
