@@ -1,3 +1,4 @@
+import { Formulario } from './formulario';
 import { GetPlanesExample } from './getPlanesExample';
 
 export default function Home() {
@@ -6,6 +7,7 @@ export default function Home() {
       CIIS XXVI
 
       <GetPlanesExample />
+      <Formulario />
     </div>
   );
 }
