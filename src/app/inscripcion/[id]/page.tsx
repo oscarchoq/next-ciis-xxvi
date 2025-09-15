@@ -1,5 +1,6 @@
 import { getPlanById } from "@/actions/plan/get-plan-by-id";
 import { redirect } from "next/navigation";
+import Inscripcion from "./ui/Inscripcion";
 
 interface Props {
   params: Promise<{
@@ -14,12 +15,12 @@ export default async function InscripcionPage({ params }: Props) {
   if ( !plan ) {
     redirect('/inscripcion');
   }
-
   // aqui mostrar el formulario
   return (
-    <div>
-      <h1>Inscripción para {id}</h1>
-      <pre>{JSON.stringify(plan, null, 2)}</pre>
-    </div>
+    // <div>
+    //   <h1>Inscripción para {id}</h1>
+    //   <pre>{JSON.stringify(plan, null, 2)}</pre>
+    // </div>
+    <Inscripcion planNombre={plan.plan.denominacion} planPrecio={plan.plan.precioDescuento} />
   );
 }
