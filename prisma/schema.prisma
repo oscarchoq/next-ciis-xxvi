@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Plan {
+  id              String   @id @default(uuid())
+  denominacion    String
+  precioDescuento Float
+  precio          Float
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  inscripcion Inscripcion[]
+}
+
+model Delegacion {
+  id           String   @id @default(uuid())
+  denominacion String
+  codigo       String   @unique
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  inscripcion Inscripcion[]
+}
+
+model Persona {
+  id              String   @id @default(uuid())
+  numeroDocumento String   @unique
+  nombres         String
+  apellidos       String
+  correo          String   @unique
+  celular         String?
+  createdAt       DateTime @default(now())
+
+  inscripcion Inscripcion[]
+}
+
+model Inscripcion {
+  id          String   @id @default(uuid())
+  universidad String
+  carrera     String
+  estado      String // OBSERVADO, CONFIRMADO, CANCELADO
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  personaId String
+  persona   Persona @relation(fields: [personaId], references: [id])
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  delegacionId String?
+  delegacion   Delegacion? @relation(fields: [delegacionId], references: [id])
+
+  inscripcionArchivo InscripcionArchivo[]
+  @@unique([personaId, planId]) // Evitar que una persona se inscriba en mas de un plan
+}
+
+model InscripcionArchivo {
+  id          String   @id @default(uuid())
+  url         String
+  tipoArchivo String // VOUCHER, MATRICULA, ETC
+  createdAt   DateTime @default(now())
+
+  inscripcionId String
+  inscripcion   Inscripcion @relation(fields: [inscripcionId], references: [id])
+}
