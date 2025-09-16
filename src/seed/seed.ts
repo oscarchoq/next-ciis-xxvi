@@ -1,10 +1,13 @@
-export interface Plan {
+type TipoArchivo = 'VOUCHER' | 'MATRICULA';
+
+interface Plan {
   denominacion: string;
   precioDescuento: number;
   precio: number;
+  archivosRequeridos: TipoArchivo[];
 }
 
-export interface Delegacion {
+interface Delegacion {
   denominacion: string;
   codigo: string;
 }
@@ -19,27 +22,32 @@ export const initialData: SeedData = {
     {
       "denominacion": "Público General",
       "precioDescuento": 120,
-      "precio": 140
+      "precio": 140,
+      "archivosRequeridos": ["VOUCHER"]
     },
     {
       "denominacion": "Delegaciones",
       "precioDescuento": 100,
-      "precio": 120
+      "precio": 120,
+      "archivosRequeridos": ["VOUCHER", "MATRICULA"]
     },
     {
       "denominacion": "Docentes UNJBG",
       "precioDescuento": 70,
-      "precio": 90
+      "precio": 90,
+      "archivosRequeridos": ["VOUCHER"]
     },
     {
       "denominacion": "Estudiantes UNJBG",
       "precioDescuento": 50,
-      "precio": 70
+      "precio": 70,
+      "archivosRequeridos": ["VOUCHER", "MATRICULA"]
     },
     {
       "denominacion": "Estudiantes ESIS",
       "precioDescuento": 35,
-      "precio": 50
+      "precio": 50,
+      "archivosRequeridos": ["VOUCHER", "MATRICULA"]
     }
   ],
   delegacion: [

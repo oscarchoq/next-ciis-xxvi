@@ -8,4 +8,6 @@ export interface InscripcionForm {
   universidad: string
   carrera: string
   voucher: File | null
+  fichaMatricula: File | null
+  images: File[]
 }

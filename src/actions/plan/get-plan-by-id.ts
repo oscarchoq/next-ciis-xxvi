@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { TipoArchivo } from "@/interface/plan";
 
 export const getPlanById = async (id: string) => {
   try {
@@ -10,8 +11,14 @@ export const getPlanById = async (id: string) => {
 
     if (!plan) return null;
     
+    // Hacer casting del campo Json a TipoArchivo[]
+    const planWithTypedArchivos = {
+      ...plan,
+      archivosRequeridos: plan.archivosRequeridos as TipoArchivo[]
+    };
+    
     return {
-      plan
+      plan: planWithTypedArchivos
     }
   } catch (error) {
     console.log(error)

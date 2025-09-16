@@ -19,6 +19,7 @@ model Plan {
   precioDescuento Float
   precio          Float
   activo          Boolean  @default(true)
+  archivosRequeridos String[] @default(["VOUCHER"]) // VOUCHER, MATRICULA, ETC
   createdAt       DateTime @default(now())
 
   inscripcion Inscripcion[]

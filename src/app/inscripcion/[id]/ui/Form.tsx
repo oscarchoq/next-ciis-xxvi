@@ -6,19 +6,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useState, useEffect } from 'react'
 import { Search, Loader2, Upload, ImageIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner';
 import { getDataByDNI } from '@/actions/get-data-by-dni';
 import { InscripcionForm } from '@/interface/inscripcion';
 
+import { Plan } from '@/interface/plan';
 
-const Formulario = () => {
-  const router = useRouter()
+interface FormularioProps {
+  plan: Plan;
+}
+
+const Formulario = ({ plan }: FormularioProps) => {
   const [isSearching, setIsSearching] = useState(false)
   const [isDataFromAPI, setIsDataFromAPI] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedFichaFile, setSelectedFichaFile] = useState<File | null>(null)
   const [dragActive, setDragActive] = useState(false)
+  const [dragActiveFicha, setDragActiveFicha] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Verificar qué archivos son requeridos según el plan
+  const voucherRequerido = plan.archivosRequeridos.includes('VOUCHER')
+  const matriculaRequerida = plan.archivosRequeridos.includes('MATRICULA')
 
   const {
     register, handleSubmit, watch, setValue, clearErrors,
@@ -37,8 +46,12 @@ const Formulario = () => {
   }, [register])
 
   useEffect(() => {
-    register("voucher", { required: "Voucher requerido" });
-  }, [register]);
+    register("voucher", { required: voucherRequerido ? "Voucher de pago requerido" : false });
+    register("fichaMatricula", { 
+      required: matriculaRequerida ? "Ficha de matrícula requerida para este plan" : false 
+    });
+    register("images");
+  }, [register, voucherRequerido, matriculaRequerida]);
 
   useEffect(() => {
     if (tipoDocumento !== 'dni' || !numeroDocumento) {
@@ -82,7 +95,25 @@ const Formulario = () => {
     setIsSubmitting(true)
     
     try {
-      // const result = await createInscription(data)
+      // Combinar archivos en el array images antes de enviar
+      const images: File[] = []
+      if (data.voucher) images.push(data.voucher)
+      if (data.fichaMatricula) images.push(data.fichaMatricula)
+      
+      // Actualizar el campo images con los archivos combinados
+      const formDataToSend = {
+        ...data,
+        images
+      }
+      
+      console.log("Datos del formulario:", formDataToSend);
+      console.log("Archivos en el array images:", images);
+      console.log("Voucher:", data.voucher);
+      console.log("Ficha de matrícula:", data.fichaMatricula);
+      console.log("Plan requiere voucher:", voucherRequerido);
+      console.log("Plan requiere ficha:", matriculaRequerida);
+
+      // const result = await createInscription(formDataToSend)
 
       // if (result.ok) {
         
@@ -105,7 +136,7 @@ const Formulario = () => {
     }
   }
 
-  // Funciones para manejar el archivo
+  // Funciones para manejar el archivo de voucher
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -129,6 +160,33 @@ const Formulario = () => {
     } else {
       setSelectedFile(null)
       setValue('voucher', null, { shouldValidate: true })
+    }
+  }
+
+  // Funciones para manejar el archivo de ficha de matrícula
+  const handleFichaFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Solo se permiten imágenes', {
+          duration: 3000,
+        });
+        e.target.value = '';
+        return;
+      }
+      if (file.size > 1024 * 1024) { // 1MB
+        toast.error('El tamaño máximo permitido es 1MB', {
+          duration: 3000,
+        });
+        e.target.value = '';
+        return;
+      }
+      setSelectedFichaFile(file)
+      setValue('fichaMatricula', file, { shouldValidate: true })
+      clearErrors('fichaMatricula')
+    } else {
+      setSelectedFichaFile(null)
+      setValue('fichaMatricula', null, { shouldValidate: true })
     }
   }
 
@@ -164,6 +222,42 @@ const Formulario = () => {
       setSelectedFile(file)
       setValue('voucher', file, { shouldValidate: true })
       clearErrors('voucher')
+    }
+  }
+
+  // Drag and drop functions for ficha de matrícula
+  const handleFichaDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActiveFicha(true)
+    } else if (e.type === 'dragleave') {
+      setDragActiveFicha(false)
+    }
+  }
+
+  const handleFichaDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActiveFicha(false)
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0]
+      if (!file.type.startsWith('image/')) {
+        toast.error('Solo se permiten imágenes', {
+          duration: 3000,
+        });
+        return;
+      }
+      if (file.size > 1024 * 1024) { // 1MB
+        toast.error('El tamaño máximo permitido es 1MB', {
+          duration: 3000,
+        });
+        return;
+      }
+      setSelectedFichaFile(file)
+      setValue('fichaMatricula', file, { shouldValidate: true })
+      clearErrors('fichaMatricula')
     }
   }
 
@@ -425,9 +519,10 @@ const Formulario = () => {
           </div>
         </div>
 
-        {/* Subir Voucher */}
-        <div>
-          <h3 className="text-[#000126] text-lg font-semibold mb-4">Voucher de Pago</h3>
+        {/* Subir Voucher - Condicional */}
+        {voucherRequerido && (
+          <div>
+            <h3 className="text-[#000126] text-lg font-semibold mb-4">Voucher de Pago</h3>
           <div className="space-y-3">
 
             {/* Área de drag and drop personalizada */}
@@ -488,6 +583,73 @@ const Formulario = () => {
             </p>
           </div>
         </div>
+        )}
+
+        {/* Subir Ficha de Matrícula - Condicional */}
+        {matriculaRequerida && (
+          <div>
+            <h3 className="text-[#000126] text-lg font-semibold mb-4">Ficha de Matrícula</h3>
+            <div className="space-y-3">
+
+              {/* Área de drag and drop para ficha de matrícula */}
+              <div
+                className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 cursor-pointer hover:border-zinc-400 ${dragActiveFicha ? 'border-blue-400 bg-blue-50' :
+                    errors.fichaMatricula ? 'border-red-500 bg-red-50' :
+                      'border-zinc-300 bg-zinc-50'
+                  }`}
+                onDragEnter={handleFichaDrag}
+                onDragLeave={handleFichaDrag}
+                onDragOver={handleFichaDrag}
+                onDrop={handleFichaDrop}
+              >
+                <Input
+                  id="ficha-input"
+                  type="file"
+                  accept="image/*"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={isSubmitting}
+                  onChange={handleFichaFileChange}
+                />
+
+                {selectedFichaFile ? (
+                  // Vista cuando hay archivo seleccionado
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <ImageIcon className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-zinc-900">{selectedFichaFile.name}</p>
+                      <p className="text-xs text-zinc-500">
+                        {(selectedFichaFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  // Vista inicial sin archivo
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-zinc-200 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <Upload className="w-6 h-6 text-zinc-500" />
+                    </div>
+                    <p className="text-sm font-medium text-zinc-700 mb-1">
+                      Arrastra tu ficha de matrícula aquí o haz clic para seleccionar
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      JPG, PNG hasta 1MB
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {errors.fichaMatricula && (
+                <p className="text-red-500 text-xs leading-tight">{errors.fichaMatricula.message}</p>
+              )}
+
+              <p className="text-xs text-zinc-500">
+                Sube una imagen clara de tu ficha de matrícula universitaria
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Botón de inscripción */}
         <div className="pt-4">

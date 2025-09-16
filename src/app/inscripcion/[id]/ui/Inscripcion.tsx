@@ -4,10 +4,11 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { IoMdArrowRoundBack } from "react-icons/io"
 import Formulario from "./Form"
+import { Plan } from "@/interface"
 
 
 
-const InscripcionPage = ({ planNombre, planPrecio }: { planNombre: string; planPrecio: number }) => {
+const InscripcionPage = ({ plan }: { plan: Plan }) => {
   const [showBackText, setShowBackText] = useState(false)
   const router = useRouter()
 
@@ -50,9 +51,9 @@ const InscripcionPage = ({ planNombre, planPrecio }: { planNombre: string; planP
               <div className="flex justify-between items-end mb-4">
                 <div>
                   <h1 className="text-white/70 text-sm md:mb-1">Inscríbete al evento por</h1>
-                  <div className="text-white/50 text-xs">{planNombre}</div>
+                  <div className="text-white/50 text-xs">{plan.denominacion}</div>
                 </div>
-                <div className="text-white font-extrabold font-jetbrains-mono text-xl sm:text-2xl md:text-3xl">S/. {planPrecio}</div>
+                <div className="text-white font-extrabold font-jetbrains-mono text-xl sm:text-2xl md:text-3xl">S/. {plan.precioDescuento}</div>
               </div>
 
               <div className="w-full h-px bg-white/20 mb-4"></div>
@@ -145,7 +146,7 @@ const InscripcionPage = ({ planNombre, planPrecio }: { planNombre: string; planP
 
         {/* Lado derecho */}
         <div className="bg-zinc-50 py-12 px-6 sm:px-8 lg:px-5 flex items-start justify-center lg:justify-start">
-          <Formulario />
+          <Formulario plan={plan} />
         </div>
       </div>
     </main>
