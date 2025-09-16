@@ -11,6 +11,7 @@ import { getDataByDNI } from '@/actions/get-data-by-dni';
 import { InscripcionForm } from '@/interface/inscripcion';
 
 import { Plan } from '@/interface/plan';
+import { createInscription } from '@/actions/create-inscription';
 
 interface FormularioProps {
   plan: Plan;
@@ -47,8 +48,8 @@ const Formulario = ({ plan }: FormularioProps) => {
 
   useEffect(() => {
     register("voucher", { required: voucherRequerido ? "Voucher de pago requerido" : false });
-    register("fichaMatricula", { 
-      required: matriculaRequerida ? "Ficha de matrícula requerida para este plan" : false 
+    register("fichaMatricula", {
+      required: matriculaRequerida ? "Ficha de matrícula requerida para este plan" : false
     });
     register("images");
   }, [register, voucherRequerido, matriculaRequerida]);
@@ -93,33 +94,45 @@ const Formulario = ({ plan }: FormularioProps) => {
   // Submit Formulario
   const onSubmit = async (data: InscripcionForm) => {
     setIsSubmitting(true)
-    
+
     try {
       // Combinar archivos en el array images antes de enviar
       const images: File[] = []
       if (data.voucher) images.push(data.voucher)
       if (data.fichaMatricula) images.push(data.fichaMatricula)
-      
-      // Actualizar el campo images con los archivos combinados
-      const formDataToSend = {
-        ...data,
-        images
+
+      console.log({ data })
+      const formDataToSend = new FormData()
+
+      formDataToSend.append('nombres', data.nombres)
+      formDataToSend.append('apellidos', data.apellidos)
+      formDataToSend.append('correo', data.correo)
+      formDataToSend.append('numeroDocumento', data.numeroDocumento)
+      formDataToSend.append('celular', data.celular)
+      formDataToSend.append('universidad', data.universidad)
+      formDataToSend.append('carrera', data.carrera)
+      formDataToSend.append('planId', plan.id)
+
+      if (images) {
+        for (let i = 0; i < images.length; i++) {
+          formDataToSend.append('images', images[i])
+        }
       }
-      
+
       console.log("Datos del formulario:", formDataToSend);
-      console.log("Archivos en el array images:", images);
-      console.log("Voucher:", data.voucher);
-      console.log("Ficha de matrícula:", data.fichaMatricula);
-      console.log("Plan requiere voucher:", voucherRequerido);
-      console.log("Plan requiere ficha:", matriculaRequerida);
+      // console.log("Archivos en el array images:", images);
+      // console.log("Voucher:", data.voucher);
+      // console.log("Ficha de matrícula:", data.fichaMatricula);
+      // console.log("Plan requiere voucher:", voucherRequerido);
+      // console.log("Plan requiere ficha:", matriculaRequerida);
 
-      // const result = await createInscription(formDataToSend)
-
+      const {ok, inscription} = await createInscription(formDataToSend)
+      console.log(inscription)
       // if (result.ok) {
-        
+
       //   // Redirigir a la página de éxito
       //   router.push('/inscripcion/success')
-        
+
       // } else {
       //   toast.error(result.message, {
       //     duration: 3000,
@@ -523,66 +536,66 @@ const Formulario = ({ plan }: FormularioProps) => {
         {voucherRequerido && (
           <div>
             <h3 className="text-[#000126] text-lg font-semibold mb-4">Voucher de Pago</h3>
-          <div className="space-y-3">
+            <div className="space-y-3">
 
-            {/* Área de drag and drop personalizada */}
-            <div
-              className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 cursor-pointer hover:border-zinc-400 ${dragActive ? 'border-blue-400 bg-blue-50' :
+              {/* Área de drag and drop personalizada */}
+              <div
+                className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 cursor-pointer hover:border-zinc-400 ${dragActive ? 'border-blue-400 bg-blue-50' :
                   errors.voucher ? 'border-red-500 bg-red-50' :
                     'border-zinc-300 bg-zinc-50'
-                }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              <Input
-                id="voucher-input"
-                type="file"
-                accept="image/*"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={isSubmitting}
-                onChange={handleFileChange}
-              />
+                  }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <Input
+                  id="voucher-input"
+                  type="file"
+                  accept="image/*"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={isSubmitting}
+                  onChange={handleFileChange}
+                />
 
-              {selectedFile ? (
-                // Vista cuando hay archivo seleccionado
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <ImageIcon className="w-5 h-5 text-green-600" />
+                {selectedFile ? (
+                  // Vista cuando hay archivo seleccionado
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <ImageIcon className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-zinc-900">{selectedFile.name}</p>
+                      <p className="text-xs text-zinc-500">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-zinc-900">{selectedFile.name}</p>
+                ) : (
+                  // Vista inicial sin archivo
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-zinc-200 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <Upload className="w-6 h-6 text-zinc-500" />
+                    </div>
+                    <p className="text-sm font-medium text-zinc-700 mb-1">
+                      Arrastra tu voucher aquí o haz clic para seleccionar
+                    </p>
                     <p className="text-xs text-zinc-500">
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      JPG, PNG hasta 1MB
                     </p>
                   </div>
-                </div>
-              ) : (
-                // Vista inicial sin archivo
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-zinc-200 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <Upload className="w-6 h-6 text-zinc-500" />
-                  </div>
-                  <p className="text-sm font-medium text-zinc-700 mb-1">
-                    Arrastra tu voucher aquí o haz clic para seleccionar
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    JPG, PNG hasta 1MB
-                  </p>
-                </div>
+                )}
+              </div>
+
+              {errors.voucher && (
+                <p className="text-red-500 text-xs leading-tight">{errors.voucher.message}</p>
               )}
+
+              <p className="text-xs text-zinc-500">
+                Sube una imagen clara de tu voucher de pago para verificar tu inscripción
+              </p>
             </div>
-
-            {errors.voucher && (
-              <p className="text-red-500 text-xs leading-tight">{errors.voucher.message}</p>
-            )}
-
-            <p className="text-xs text-zinc-500">
-              Sube una imagen clara de tu voucher de pago para verificar tu inscripción
-            </p>
           </div>
-        </div>
         )}
 
         {/* Subir Ficha de Matrícula - Condicional */}
@@ -594,8 +607,8 @@ const Formulario = ({ plan }: FormularioProps) => {
               {/* Área de drag and drop para ficha de matrícula */}
               <div
                 className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 cursor-pointer hover:border-zinc-400 ${dragActiveFicha ? 'border-blue-400 bg-blue-50' :
-                    errors.fichaMatricula ? 'border-red-500 bg-red-50' :
-                      'border-zinc-300 bg-zinc-50'
+                  errors.fichaMatricula ? 'border-red-500 bg-red-50' :
+                    'border-zinc-300 bg-zinc-50'
                   }`}
                 onDragEnter={handleFichaDrag}
                 onDragLeave={handleFichaDrag}

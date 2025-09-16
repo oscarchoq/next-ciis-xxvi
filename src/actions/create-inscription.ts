@@ -1,13 +1,14 @@
 "use server";
 import prisma from '@/lib/prisma';
 import { v2 as cloudinary } from 'cloudinary'
+import { sendEmail } from './send-email';
 
 cloudinary.config( process.env.CLOUDINARY_URL ?? '' )
 
 export const createInscription = async (formData: FormData) => {
   try {
-    
-    // Validar datos del form
+
+    // Se puede mejorar esto mas adelante
     const nombres = formData.get('nombres') as string;
     const apellidos = formData.get('apellidos') as string;
     const correo = formData.get('correo') as string;
@@ -15,11 +16,15 @@ export const createInscription = async (formData: FormData) => {
     const celular = formData.get('celular') as string;
     const universidad = formData.get('universidad') as string;
     const carrera = formData.get('carrera') as string;
+    const planId = formData.get('planId') as string;
 
     // Validación básica
-    if (!nombres || !apellidos || !correo || !numeroDocumento || !celular || !universidad || !carrera) {
+    if (!nombres || !apellidos || !correo || !numeroDocumento || !celular || !universidad || !carrera || !planId) {
       throw new Error('Todos los campos son requeridos');
     }
+
+    // Validaciones con la base de datos
+
 
     // guardar en la base de datos
 
@@ -40,7 +45,7 @@ export const createInscription = async (formData: FormData) => {
       const inscription = await tx.inscripcion.create({
         data: {
           personaId: person.id,
-          planId: 'a39ef10b-564c-492b-b89c-34d19d01078d',
+          planId: planId,
           universidad,
           carrera,
           estado: 'PENDIENTE'
@@ -58,12 +63,20 @@ export const createInscription = async (formData: FormData) => {
         data: images.map ( (img) => ({
           url: img!,
           inscripcionId: inscription.id,
-          tipoArchivo: 'DOCUMENTO',
+          tipoArchivo: 'IMAGEN',
         }))
       })
 
       console.log({ person, inscription, images })
+
+      const emailData = {
+        to: person.correo,
+        name: person.nombres + ' ' + person.apellidos,
+        subject: 'Registro CIIS XXVI',
+      }
+      await sendEmail(emailData)
       return {
+        ok: true,
         inscription
       }
     })
