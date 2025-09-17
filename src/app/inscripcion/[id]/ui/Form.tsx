@@ -128,16 +128,18 @@ const Formulario = ({ plan }: FormularioProps) => {
 
       const {ok, inscription} = await createInscription(formDataToSend)
       console.log(inscription)
-      // if (result.ok) {
+      if (ok) {
+        toast.success('Inscripción exitosa! Revisa tu correo.', {
+          duration: 5000,
+        });
+        // Redirigir a la página de éxito
+        // router.push('/inscripcion/success')
 
-      //   // Redirigir a la página de éxito
-      //   router.push('/inscripcion/success')
-
-      // } else {
-      //   toast.error(result.message, {
-      //     duration: 3000,
-      //   });
-      // }
+      } else {
+        toast.error("error al inscribirse", {
+          duration: 3000,
+        });
+      }
       console.log("MANDO FORMULARIO")
     } catch (error) {
       console.error('Error al enviar formulario:', error);

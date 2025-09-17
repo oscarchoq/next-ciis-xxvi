@@ -2,7 +2,6 @@
 import prisma from '@/lib/prisma';
 import { v2 as cloudinary } from 'cloudinary'
 import { sendEmail } from './send-email';
-import { Persona } from '@/interface';
 
 cloudinary.config( process.env.CLOUDINARY_URL ?? '' )
 

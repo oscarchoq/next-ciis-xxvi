@@ -1,7 +1,7 @@
 
 import Link from "next/link";
-import { ExampleSendMail } from "./exampleEmail";
-import { Formulario } from './formulario';
+// import { ExampleSendMail } from "./exampleEmail";
+// import { Formulario } from './formulario';
 
 
 export default function Home() {
