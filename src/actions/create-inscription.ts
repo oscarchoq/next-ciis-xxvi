@@ -2,6 +2,7 @@
 import prisma from '@/lib/prisma';
 import { v2 as cloudinary } from 'cloudinary'
 import { sendEmail } from './send-email';
+import { Persona } from '@/interface';
 
 cloudinary.config( process.env.CLOUDINARY_URL ?? '' )
 
@@ -24,10 +25,24 @@ export const createInscription = async (formData: FormData) => {
     }
 
     // Validaciones con la base de datos
+    // 1. Verificar que no exista esa persona ya registrada
+    const foundPerson = await prisma.persona.findFirst({
+      where: { numeroDocumento },
+      select: { id: true }
+    })
+    if ( foundPerson ) throw new Error('Ya existe una persona con ese número de documento')
 
+    // 2. Verificar que no exista el correo ya registrado
+    const foundEmail = await prisma.persona.findFirst({
+      where: { correo },
+      select: { id: true }
+    })
+    if ( foundEmail ) throw new Error('Ya existe una persona con ese correo electrónico')
 
+    // 3. Verificar numero de celular - mas adelante si es que uso enviar notificaciones por wsp
+    // 4. Verificar el plan pero no es tan necesario
+    
     // guardar en la base de datos
-
     const prismaTx = await prisma.$transaction(async (tx) => {
 
       // Primero crear la persona
@@ -35,7 +50,7 @@ export const createInscription = async (formData: FormData) => {
         data: {
           nombres,
           apellidos,
-          correo,
+          correo: correo.toLowerCase(),
           numeroDocumento,
           celular
         }
@@ -69,22 +84,32 @@ export const createInscription = async (formData: FormData) => {
 
       console.log({ person, inscription, images })
 
-      const emailData = {
-        to: person.correo,
-        name: person.nombres + ' ' + person.apellidos,
-        subject: 'Registro CIIS XXVI',
-      }
-      await sendEmail(emailData)
       return {
         ok: true,
+        person,
         inscription
       }
     })
 
-    return {
-      ok: true,
-      inscription: prismaTx.inscription
+    if ( prismaTx.ok) {
+      const emailData = {
+        to: prismaTx.person.correo,
+        name: prismaTx.person.nombres + ' ' + prismaTx.person.apellidos,
+        subject: 'Registro CIIS XXVI',
+      }
+      await sendEmail(emailData)
+
+      return {
+        ok: true,
+        inscription: prismaTx.inscription
+      }
     }
+
+    return {
+      ok: false,
+    }
+
+    
   } catch (error) {
     console.log(error)
     throw new Error('Error creating inscription: ' + (error as Error).message);
